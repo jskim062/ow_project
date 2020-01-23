@@ -1,0 +1,178 @@
+from skimage import measure
+import matplotlib.pyplot as plt
+import numpy as np
+#import cv2
+import cv2, time, sys, random, mss
+#import numpy as np
+import pyautogui as pag
+#from matplotlib import pyplot as plt
+from colorama import init, Fore, Back, Style
+init(autoreset=True)
+from helpers import *
+import pyautogui 
+
+while True:
+
+  right_icon_pos = {'left': 650, 'top': 450, 'width': 70, 'height': 70}
+  left_icon_pos = {'left': 530, 'top': 450, 'width': 70, 'height': 70}
+
+
+  face_icon_pos = {'left': 590, 'top': 350, 'width': 70, 'height': 70}
+
+
+  left_button = [496, 750]
+  right_button = [647, 750]
+
+  #plt.imshow(left_icon_pos),plt.show()
+  #plt.imshow(right_icon_pos),plt.show()
+
+  pag.PAUSE = 0.01
+
+  fail_limit = 10
+  initial_dalay = 0.08
+
+
+  def get_colors(img):
+    mean = np.mean(img, axis=(0, 1))
+
+    result = False
+    
+    if mean[0] > 40 and mean[0] < 80 and mean[1] > 40 and mean[1] < 60 and mean[2] > 40 and mean[2] < 60:
+      result = 'BOMB'
+    elif mean[0] > 250 and mean[1] > 70 and mean[1] < 110 and mean[2] > 230:
+      result = 'SWORD'
+    elif mean[0] > 90 and mean[0] < 120 and mean[1] > 111 and mean[1] < 200 and mean[2] > 60 and mean[2] < 110:
+      result = 'POISON'
+    elif mean[0] > 135 and mean[0] < 230 and mean[1] > 135 and mean[1] < 225 and mean[2] > 75 and mean[2] < 140:
+      result = 'JEWEL'
+
+    return (result, mean)
+  if __name__ == "__main__":
+      with mss.mss() as sct:
+        left_img = np.array(sct.grab(left_icon_pos))[:,:,:3]
+        right_img = np.array(sct.grab(right_icon_pos))[:,:,:3]
+        face_img = np.array(sct.grab(face_icon_pos))[:,:,:3]
+
+  def mse(imageA, imageB):
+    # the 'Mean Squared Error' between the two images is the
+    # sum of the squared difference between the two images;
+    # NOTE: the two images must have the same dimension
+    err = np.sum((imageA.astype("float") - imageB.astype("float")) ** 2)
+    err /= float(imageA.shape[0] * imageA.shape[1])
+    
+    # return the MSE, the lower the error, the more "similar"
+    # the two images are
+    return err
+  
+  def compare_images(imageA, imageB, title):
+    # compute the mean squared error and structural similarity
+    # index for the images
+    m = mse(imageA, imageB)
+    s = measure.compare_ssim(imageA, imageB)
+
+    #s = ssim(imageA, imageB)
+
+    # setup the figure
+    fig = plt.figure(title)
+    plt.suptitle("MSE: %.2f, SSIM: %.2f" % (m, s))
+
+    # show first image
+    ax = fig.add_subplot(1, 2, 1)
+    plt.imshow(imageA, cmap = plt.cm.gray)
+    plt.axis("off")
+
+    # show the second image
+    ax = fig.add_subplot(1, 2, 2)
+    plt.imshow(imageB, cmap = plt.cm.gray)
+    plt.axis("off")
+
+    # show the images
+    #plt.show()
+
+    return m, s
+
+  original = cv2.imread("compare.jpg")
+
+  #plt.imshow(original),plt.show()
+  contrast = left_img
+  #plt.imshow(contrast),plt.show()
+  shopped = right_img
+  #plt.imshow(shopped),plt.show()
+  #plt.imshow(original),plt.show()
+  face = face_img
+  face_compare1 = cv2.imread("face.jpg")
+  face_compare2 = cv2.imread("face2.jpg")
+
+
+
+
+
+
+  # convert the images to grayscale
+  original = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+  #print(original.shape)
+  contrast = cv2.cvtColor(contrast, cv2.COLOR_BGR2GRAY)
+  #print(contrast.shape)
+  shopped = cv2.cvtColor(shopped, cv2.COLOR_BGR2GRAY)
+  #print(shopped.shape)
+  face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+  face_compare1 = cv2.cvtColor(face_compare1, cv2.COLOR_BGR2GRAY)
+  face_compare2 = cv2.cvtColor(face_compare2, cv2.COLOR_BGR2GRAY)
+
+  # initialize the figure
+  fig = plt.figure("Images")
+  images = ("Original", original), ("Contrast", contrast), ("Photoshopped", shopped), ("face", face), (face_compare1, face_compare1), (face_compare2, face_compare2)
+  
+  # loop over the images
+  for (i, (name, image)) in enumerate(images):
+    # show the image
+    ax = fig.add_subplot(1, 6, i + 1)
+    ax.set_title(name)
+    #plt.imshow(image, cmap = plt.cm.gray)
+    plt.axis("off")
+
+  # show the figure
+  #plt.show()
+  
+  # compare the images
+  #m1,s1 = compare_images(original, original, "Original vs. Original")
+  #compare_images(original, contrast, "Original vs. Contrast")
+
+  m2,s2 = compare_images(original, contrast, "Original vs. contrast")
+  #print(m2)
+  #compare_images(original, shopped, "Original vs. Photoshopped")
+  m3,s3 = compare_images(original, shopped, "Original vs. Original")
+  #print(m3)
+    #compare_images(face, face_compare1, "Original vs. Photoshopped")
+  m4,s4 = compare_images(face, face_compare1, "Original vs. Original")
+
+    #compare_images(face, face_compare2, "Original vs. Photoshopped")
+  m5,s5 = compare_images(face, face_compare2, "Original vs. Original")
+
+  stair = 0
+  face_posison = 0
+  
+  if m2 > m3:
+    stair = 1
+  elif m3> m2:  
+    stair = 2
+  if m4 > m5:
+    face_posison = 1
+  elif m5 > m4:
+    face_posison = 2
+  if stair == 1 and face_posison == 1:
+    #time.sleep(1)
+    pyautogui.click(x=752, y=649)
+    time.sleep(0.5)
+  if stair == 2 and face_posison == 2:
+    #time.sleep(1)
+    pyautogui.click(x=752, y=649)
+    time.sleep(0.5)
+  if stair == 1 and face_posison == 2:
+    #time.sleep(1)
+    pyautogui.click(x=494, y=655)
+    time.sleep(0.5)
+  if stair == 2 and face_posison == 1:
+    
+    pyautogui.click(x=494, y=655)
+    time.sleep(0.5)
